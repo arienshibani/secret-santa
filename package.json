@@ -1,0 +1,12 @@
+{
+  "name": "secret-santa",
+  "version": "1.0.0",
+  "description": "Node script that sets up a game of secret santa!",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
