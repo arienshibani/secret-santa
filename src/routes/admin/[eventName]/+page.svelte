@@ -439,9 +439,11 @@
 						<button
 							type="button"
 							on:click={toggleTemplateCollapse}
-							class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+							class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer text-left"
+							aria-expanded={!templateCollapsed}
+							aria-controls="message-template-content"
 						>
-							<h2 class="text-lg font-semibold text-gray-800">{$t('admin.messageTemplate')}</h2>
+							<span class="text-lg font-semibold text-gray-800">{$t('admin.messageTemplate')}</span>
 							<svg
 								class="w-5 h-5 text-gray-600 transition-transform {templateCollapsed ? '' : 'rotate-180'}"
 								fill="none"
@@ -452,7 +454,7 @@
 							</svg>
 						</button>
 						{#if !templateCollapsed}
-							<div class="p-6 space-y-4 border-t border-gray-200">
+							<div id="message-template-content" class="p-6 space-y-4 border-t border-gray-200">
 								<div>
 									<label for="email-subject" class="block text-sm font-medium text-gray-700 mb-2">
 										{$t('admin.emailSubject')} ({$t('admin.emailOnly')})
