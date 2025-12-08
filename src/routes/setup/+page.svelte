@@ -108,15 +108,25 @@
 				
 				// Automatically log in as admin after creating the event
 				// This creates a session cookie so the results page can load participants
+				// Use credentials: 'include' to ensure cookies are sent/received
 				try {
 					const loginResponse = await fetch('/api/admin/verify-pin', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
+						credentials: 'include', // Important: include cookies
 						body: JSON.stringify({ eventName: finalEventName, pin })
 					});
+					
+					if (!loginResponse.ok) {
+						console.warn('Login response not OK:', loginResponse.status);
+					}
+					
 					const loginData = await loginResponse.json();
 					if (!loginData.valid) {
-						console.warn('Failed to auto-login after event creation');
+						console.warn('Failed to auto-login after event creation:', loginData);
+					} else {
+						// Small delay to ensure cookie is set before navigation
+						await new Promise(resolve => setTimeout(resolve, 100));
 					}
 				} catch (loginError) {
 					console.error('Error auto-logging in:', loginError);
