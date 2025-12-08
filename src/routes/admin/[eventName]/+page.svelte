@@ -432,8 +432,10 @@
 					<div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
 						<button
 							type="button"
-							on:click={() => (templateCollapsed = !templateCollapsed)}
-							class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+							on:click={() => {
+								templateCollapsed = !templateCollapsed;
+							}}
+							class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
 						>
 							<h2 class="text-lg font-semibold text-gray-800">{$t('admin.messageTemplate')}</h2>
 							<svg
