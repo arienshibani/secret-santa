@@ -105,6 +105,23 @@
 				if (typeof window !== 'undefined') {
 					sessionStorage.setItem(`adminPin_${finalEventName}`, pin);
 				}
+				
+				// Automatically log in as admin after creating the event
+				// This creates a session cookie so the results page can load participants
+				try {
+					const loginResponse = await fetch('/api/admin/verify-pin', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ eventName: finalEventName, pin })
+					});
+					const loginData = await loginResponse.json();
+					if (!loginData.valid) {
+						console.warn('Failed to auto-login after event creation');
+					}
+				} catch (loginError) {
+					console.error('Error auto-logging in:', loginError);
+					// Continue anyway - user can manually log in if needed
+				}
 			} catch (error) {
 				// Config might already exist, that's okay
 				console.warn('Admin config might already exist:', error);
