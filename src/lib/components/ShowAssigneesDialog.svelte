@@ -13,9 +13,10 @@
 
 <button
 	type="button"
-	class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
+	class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
 	on:click={() => (showDialog = true)}
 >
+	<span>👁️</span>
 	{$t('admin.showAssignees')}
 </button>
 

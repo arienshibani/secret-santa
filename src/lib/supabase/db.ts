@@ -126,11 +126,11 @@ export const updateParticipant = async (
 // getAdminConfig removed - admin config should only be accessed via server-side API
 // Use /api/admin/config endpoint if you need to read admin config (requires authentication)
 
-export const createAdminConfig = async (eventName: string, pin: string): Promise<AdminConfig> => {
+export const createAdminConfig = async (eventName: string, pin: string, eventDate?: string | null): Promise<AdminConfig> => {
 	const response = await fetch('/api/admin/create-config', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ eventName, pin })
+		body: JSON.stringify({ eventName, pin, eventDate: eventDate || null })
 	});
 
 	if (!response.ok) {

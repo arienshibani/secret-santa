@@ -17,6 +17,7 @@
 
 	let eventName = '';
 	let pin = '';
+	let eventDate = '';
 	let errors: Record<string, string> = {};
 	let loading = false;
 	let participantData: {
@@ -61,6 +62,19 @@
 			}
 		}
 
+		// Validate event date if provided (must be today or future)
+		if (eventDate) {
+			const selectedDate = new Date(eventDate);
+			const now = new Date();
+			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+			
+			if (selectedDateOnly < today) {
+				errors.eventDate = $t('admin.eventDatePastError');
+				return false;
+			}
+		}
+
 		return true;
 	};
 
@@ -94,9 +108,12 @@
 			// Update assignments in database
 			await updateAssignments(assignmentArray);
 
+			// Convert local datetime to UTC ISO string if eventDate is provided
+			const eventDateToSave = eventDate ? new Date(eventDate).toISOString() : null;
+
 			// Create admin config (event_name is unique, so this will fail if it already exists)
 			try {
-				await createAdminConfig(finalEventName, pin);
+				await createAdminConfig(finalEventName, pin, eventDateToSave);
 				// Store PIN in sessionStorage for results page
 				if (typeof window !== 'undefined') {
 					sessionStorage.setItem(`adminPin_${finalEventName}`, pin);
@@ -199,6 +216,23 @@
 							<p class="mt-2 text-xs text-gray-500">{$t('step1.pinHelp')}</p>
 							{#if errors.pin}
 								<p class="mt-1 text-sm text-red-600">{errors.pin}</p>
+							{/if}
+						</div>
+
+						<div>
+							<label for="eventDate" class="block text-sm font-medium text-gray-700 mb-2">
+								{$t('admin.eventDateLabel')} <span class="text-gray-500 text-xs font-normal">({$t('admin.eventDateOptional')})</span>
+							</label>
+							<input
+								id="eventDate"
+								type="datetime-local"
+								bind:value={eventDate}
+								class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+							/>
+							<p class="mt-1 text-xs text-gray-500">{$t('admin.eventDateHelp')}</p>
+							<p class="mt-1 text-xs text-gray-500">{$t('admin.eventDateDescription')}</p>
+							{#if errors.eventDate}
+								<p class="mt-1 text-sm text-red-600">{errors.eventDate}</p>
 							{/if}
 						</div>
 

@@ -24,6 +24,7 @@ export interface AdminConfig {
 	pin: string;
 	message_template: string | null;
 	email_subject: string | null;
+	event_date: string | null;
 	created_at: string;
 }
 
