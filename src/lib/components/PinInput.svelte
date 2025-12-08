@@ -43,9 +43,13 @@
 		const input = inputs[index];
 		if (!input) return;
 
+		// Always store the actual digit value in input.value for HTML5 validation
+		// Use CSS to mask the display visually
+		const actualValue = pinArray[index] || '';
+		input.value = actualValue;
+
 		if (showPin) {
 			// Show actual value when reveal is active
-			input.value = pinArray[index] || '';
 			input.classList.remove('pin-masked');
 		} else {
 			const lastFilledIndex = getLastFilledIndex();
@@ -54,15 +58,12 @@
 			const hasValue = !!pinArray[index];
 
 			if (!hasValue) {
-				input.value = '';
 				input.classList.remove('pin-masked');
 			} else if (isFocused || isLastFilled) {
 				// Show actual digit if focused or it's the last filled one
-				input.value = pinArray[index];
 				input.classList.remove('pin-masked');
 			} else {
-				// Mask all other filled digits
-				input.value = '●';
+				// Mask all other filled digits using CSS
 				input.classList.add('pin-masked');
 			}
 		}
@@ -274,5 +275,11 @@
 	:global(.pin-input.pin-masked) {
 		-webkit-text-security: disc;
 		text-security: disc;
+		/* Ensure the actual value is still there for validation */
+		color: transparent;
+		text-shadow: 0 0 0 currentColor;
+	}
+	:global(.pin-input.pin-masked::placeholder) {
+		color: transparent;
 	}
 </style>
