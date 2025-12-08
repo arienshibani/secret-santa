@@ -5,7 +5,7 @@
 	import { t } from '$lib/i18n';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import SnowEffect from '$lib/components/SnowEffect.svelte';
-	import { getAllParticipants, getAdminConfig } from '$lib/supabase/db';
+	import { getAllParticipants } from '$lib/supabase/db';
 	import { getAssignmentUrl } from '$lib/utils/token';
 	import type { Participant, AssignmentResult } from '$lib/utils/types';
 
@@ -44,10 +44,12 @@
 			}
 			assignments = results;
 
-			// Get admin PIN
-			const config = await getAdminConfig(eventName);
-			if (config) {
-				adminPin = config.pin;
+			// Get admin PIN from sessionStorage (stored during setup)
+			if (typeof window !== 'undefined') {
+				const storedPin = sessionStorage.getItem(`adminPin_${eventName}`);
+				if (storedPin) {
+					adminPin = storedPin;
+				}
 			}
 		} catch (error) {
 			console.error('Error loading participants:', error);

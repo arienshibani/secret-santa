@@ -9,7 +9,6 @@
 	import {
 		getAllParticipants,
 		verifyAdminPin,
-		getAdminConfig,
 		updateGiftStatus,
 		updateParticipant,
 		clearAllData

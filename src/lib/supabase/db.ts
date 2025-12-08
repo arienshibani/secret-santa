@@ -117,16 +117,8 @@ export const updateParticipant = async (
 	}
 };
 
-export const getAdminConfig = async (eventName: string): Promise<AdminConfig | null> => {
-	const { data, error } = await supabase
-		.from('admin_config')
-		.select('*')
-		.eq('event_name', eventName)
-		.single();
-
-	if (error || !data) return null;
-	return data as AdminConfig;
-};
+// getAdminConfig removed - admin config should only be accessed via server-side API
+// Use /api/admin/config endpoint if you need to read admin config (requires authentication)
 
 export const createAdminConfig = async (eventName: string, pin: string): Promise<AdminConfig> => {
 	const { data, error } = await supabase

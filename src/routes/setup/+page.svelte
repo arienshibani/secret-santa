@@ -9,8 +9,7 @@
 	import {
 		createParticipants,
 		updateAssignments,
-		createAdminConfig,
-		getAdminConfig
+		createAdminConfig
 	} from '$lib/supabase/db';
 	import { shuffleAssignments } from '$lib/utils/shuffle';
 	import { getParticipantEmoji, addEmojiToName } from '$lib/utils/emoji';
@@ -95,13 +94,19 @@
 			// Update assignments in database
 			await updateAssignments(assignmentArray);
 
-			// Create admin config if it doesn't exist
-			const existingConfig = await getAdminConfig(finalEventName);
-			if (!existingConfig) {
+			// Create admin config (event_name is unique, so this will fail if it already exists)
+			try {
 				await createAdminConfig(finalEventName, pin);
+				// Store PIN in sessionStorage for results page
+				if (typeof window !== 'undefined') {
+					sessionStorage.setItem(`adminPin_${finalEventName}`, pin);
+				}
+			} catch (error) {
+				// Config might already exist, that's okay
+				console.warn('Admin config might already exist:', error);
 			}
 
-			// Clear sessionStorage
+			// Clear participant data from sessionStorage
 			if (typeof window !== 'undefined') {
 				sessionStorage.removeItem('participantData');
 			}
