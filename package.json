@@ -25,6 +25,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@supabase/supabase-js": "^2.39.0"
+		"@supabase/supabase-js": "^2.39.0",
+		"@tanstack/svelte-table": "^8.21.3"
 	}
 }

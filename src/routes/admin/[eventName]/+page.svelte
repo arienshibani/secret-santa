@@ -16,6 +16,9 @@
 	} from '$lib/supabase/db';
 	import { getAssignmentUrl } from '$lib/utils/token';
 	import type { Participant } from '$lib/utils/types';
+	import { createSvelteTable, flexRender, getCoreRowModel, getFilteredRowModel } from '@tanstack/svelte-table';
+	import type { ColumnDef, ColumnFiltersState } from '@tanstack/table-core';
+	import { writable } from 'svelte/store';
 
 	let eventName = '';
 	let authenticated = false;
@@ -25,12 +28,16 @@
 	let showAssignees = false;
 	let showClearDialog = false;
 	let loading = false;
-	let copiedIndex: number | null = null;
+	let copiedIndex: Map<string, boolean> = new Map();
 	let editingId: string | null = null;
 	let editName = '';
 	let editEmail = '';
 	let editSms = '';
 	let savingId: string | null = null;
+	
+	// Table filtering state
+	const columnFilters = writable<ColumnFiltersState>([]);
+	const globalFilter = writable('');
 
 	$: eventName = $page.params.eventName || '';
 
@@ -79,10 +86,15 @@
 	const handleGiftStatusChange = async (participantId: string, checked: boolean) => {
 		try {
 			await updateGiftStatus(participantId, checked);
-			await loadParticipants();
+			// Update local state instead of reloading to preserve order
+			participants = participants.map(p => 
+				p.id === participantId ? { ...p, gift_ready: checked } : p
+			);
 		} catch (error) {
 			console.error('Error updating gift status:', error);
 			alert('Error updating gift status');
+			// Reload on error to sync state
+			await loadParticipants();
 		}
 	};
 
@@ -111,12 +123,12 @@
 		return assigned?.name || null;
 	};
 
-	const copyToClipboard = async (url: string, index: number) => {
+	const copyToClipboard = async (url: string, participantId: string) => {
 		try {
 			await navigator.clipboard.writeText(url);
-			copiedIndex = index;
+			copiedIndex.set(participantId, true);
 			setTimeout(() => {
-				copiedIndex = null;
+				copiedIndex.delete(participantId);
 			}, 2000);
 		} catch (error) {
 			console.error('Failed to copy:', error);
@@ -165,6 +177,87 @@
 		const body = $t('results.emailBody', { name: participantName, url, eventName: eventName || 'Secret Santa' });
 		return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 	};
+
+	// Column definitions for TanStack Table - reactive to showAssignees
+	let tableColumns: ColumnDef<Participant>[] = [];
+	
+	$: {
+		tableColumns = [
+			{
+				accessorKey: 'name',
+				header: $t('admin.name')
+			},
+			{
+				id: 'contact',
+				header: $t('admin.contact'),
+				accessorFn: (row: Participant) => {
+					const parts: string[] = [];
+					if (row.email) parts.push(row.email);
+					if (row.sms) parts.push(row.sms);
+					return parts.join(' ') || '';
+				}
+			},
+			{
+				id: 'assignmentUrl',
+				header: $t('admin.assignmentUrl'),
+				enableColumnFilter: false
+			},
+			{
+				accessorKey: 'gift_ready',
+				header: $t('admin.giftReady'),
+				enableColumnFilter: false
+			},
+			{
+				id: 'actions',
+				header: 'Actions',
+				enableColumnFilter: false
+			},
+			...(showAssignees ? [{
+				id: 'assignedTo',
+				header: $t('admin.assignedTo'),
+				enableColumnFilter: false
+			}] : [])
+		] as ColumnDef<Participant>[];
+	}
+
+	// Filter participants based on global filter
+	$: filteredParticipants = $globalFilter
+		? participants.filter((p) => {
+				const searchTerm = $globalFilter.toLowerCase();
+				const name = p.name?.toLowerCase() || '';
+				const email = p.email?.toLowerCase() || '';
+				const sms = p.sms?.toLowerCase() || '';
+				return name.includes(searchTerm) || email.includes(searchTerm) || sms.includes(searchTerm);
+			})
+		: participants;
+
+	// Create table instance - reactive to data and columns changes
+	$: table = createSvelteTable({
+		data: filteredParticipants,
+		columns: tableColumns,
+		state: {
+			columnFilters: $columnFilters,
+			globalFilter: $globalFilter
+		},
+		onColumnFiltersChange: (updater: any) => {
+			if (typeof updater === 'function') {
+				columnFilters.set(updater($columnFilters));
+			} else {
+				columnFilters.set(updater);
+			}
+		},
+		onGlobalFilterChange: (updater: any) => {
+			if (typeof updater === 'function') {
+				globalFilter.set(updater($globalFilter));
+			} else {
+				globalFilter.set(updater);
+			}
+		},
+		getCoreRowModel: getCoreRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		enableGlobalFilter: true,
+		globalFilterFn: 'includesString'
+	});
 </script>
 
 <svelte:head>
@@ -236,6 +329,20 @@
 						</button>
 					</div>
 
+					<!-- Global Filter Input -->
+					<div class="mb-4">
+						<label for="global-filter" class="block text-sm font-medium text-gray-700 mb-2">
+							Search participants
+						</label>
+						<input
+							id="global-filter"
+							type="text"
+							bind:value={$globalFilter}
+							placeholder="Search by name, email, or phone..."
+							class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+						/>
+					</div>
+
 					<div class="overflow-x-auto">
 						<table class="w-full border-collapse">
 							<thead>
@@ -253,7 +360,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each participants as participant, i (participant.id)}
+								{#each filteredParticipants as participant, i (participant.id)}
 									<tr class="hover:bg-gray-50">
 										<td class="border border-gray-300 px-4 py-2">
 											{#if editingId === participant.id}
@@ -296,14 +403,14 @@
 												</div>
 											{/if}
 										</td>
-										<td class="border border-gray-300 px-4 py-2">
+										<td class="border border-gray-300 px-4 py-2 text-center">
 											<button
 												type="button"
-												on:click={() => copyToClipboard(getAssignmentUrl(participant.token), i)}
-												class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors whitespace-nowrap"
+												on:click={() => copyToClipboard(getAssignmentUrl(participant.token), participant.id)}
+												class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors whitespace-nowrap mx-auto"
 												title={getAssignmentUrl(participant.token)}
 											>
-												{copiedIndex === i ? $t('common.copied') : $t('common.copy')}
+												{copiedIndex.get(participant.id) ? $t('common.copied') : $t('common.copy')}
 											</button>
 										</td>
 										<td class="border border-gray-300 px-4 py-2 text-center">
