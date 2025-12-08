@@ -105,6 +105,7 @@
 		"assignedTo": "Assigned To",
 		"showAssignees": "Show Assignees",
 		"hideAssignees": "Hide Assignees",
+		"revealAssignments": "Reveal Assignments",
 		"showAssigneesWarning": "Are you sure you want to reveal all assignments? This will show who is assigned to whom.",
 		"confirm": "Confirm",
 		"clearData": "Clear All Data",
@@ -135,6 +136,22 @@
 		"eventHasPassed": "Event has passed",
 		"eventDatePastError": "Event date cannot be in the past",
 		"eventDateSaveError": "Failed to save event date"
+	},
+	"reveal": {
+		"title": "Reveal Assignments 🎄",
+		"description": "Enter your admin PIN to start the dramatic reveal",
+		"startReveal": "Start Reveal",
+		"readyToReveal": "Ready to reveal {{count}} assignments!",
+		"instructions": "Press spacebar or click to advance. Press Escape to return to admin.",
+		"progress": "Assignment {{current}} of {{total}}",
+		"participant": "Participant",
+		"assignedTo": "Assigned To",
+		"navigationHint": "Click anywhere, press Space/→ for next, ← for previous, Escape to exit",
+		"next": "Next",
+		"previous": "Previous",
+		"finish": "Finish",
+		"noAssignments": "No assignments found. Please create assignments first.",
+		"backToAdmin": "Back to Admin"
 	},
 	"language": {
 		"en": "English",

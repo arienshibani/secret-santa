@@ -105,6 +105,7 @@
 		"assignedTo": "Tildelt til",
 		"showAssignees": "Vis tildelingar",
 		"hideAssignees": "Gøym tildelingar",
+		"revealAssignments": "Avslør tildelingar",
 		"showAssigneesWarning": "Er du sikker på at du vil avsløre alle tildelingar? Dette vil vise kven som er tildelt kven.",
 		"confirm": "Stadfest",
 		"clearData": "Slett alle data",
@@ -135,6 +136,22 @@
 		"eventHasPassed": "Arrangementet har funne stad",
 		"eventDatePastError": "Arrangementsdato kan ikkje vere i fortida",
 		"eventDateSaveError": "Kunne ikkje lagra arrangementsdato"
+	},
+	"reveal": {
+		"title": "Avslør tildelingar 🎄",
+		"description": "Skriv inn din admin-PIN for å starta den dramatiske avsløringa",
+		"startReveal": "Start avsløring",
+		"readyToReveal": "Klar til å avsløre {{count}} tildelingar!",
+		"instructions": "Trykk mellomrom eller klikk for å gå vidare. Trykk Escape for å gå tilbake til oversikta.",
+		"progress": "Tildeling {{current}} av {{total}}",
+		"participant": "Deltakar",
+		"assignedTo": "Tildelt til",
+		"navigationHint": "Klikk kvar som helst, trykk mellomrom/→ for neste, ← for førre, Escape for å avslutte",
+		"next": "Neste",
+		"previous": "Førre",
+		"finish": "Fullfør",
+		"noAssignments": "Ingen tildelingar funne. Ver venleg opprett tildelingar først.",
+		"backToAdmin": "Tilbake til oversikt"
 	},
 	"language": {
 		"en": "English",

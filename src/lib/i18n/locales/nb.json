@@ -105,6 +105,7 @@
 		"assignedTo": "Tildelt til",
 		"showAssignees": "Vis tildelinger",
 		"hideAssignees": "Skjul tildelinger",
+		"revealAssignments": "Avslør tildelinger",
 		"showAssigneesWarning": "Er du sikker på at du vil avsløre alle tildelinger? Dette vil vise hvem som er tildelt hvem.",
 		"confirm": "Bekreft",
 		"clearData": "Slett alle data",
@@ -135,6 +136,22 @@
 		"eventHasPassed": "Arrangementet har funnet sted",
 		"eventDatePastError": "Arrangementsdato kan ikke være i fortiden",
 		"eventDateSaveError": "Kunne ikke lagre arrangementsdato"
+	},
+	"reveal": {
+		"title": "Avslør tildelinger 🎄",
+		"description": "Dette skal bare gjøres i plenum, når alle deltakere er samlet og har med seg sine gaver.",
+		"startReveal": "Start avsløring",
+		"readyToReveal": "Klar til å avsløre {{count}} tildelinger!",
+		"instructions": "Trykk mellomrom eller klikk for å gå videre. Trykk Escape for å gå tilbake til oversikt.",
+		"progress": "Tildeling {{current}} av {{total}}",
+		"participant": "Deltaker",
+		"assignedTo": "Tildelt til",
+		"navigationHint": "Klikk hvor som helst, trykk mellomrom/→ for neste, ← for forrige, Escape for å avslutte",
+		"next": "Neste",
+		"previous": "Forrige",
+		"finish": "Fullfør",
+		"noAssignments": "Ingen tildelinger funnet. Vennligst opprett tildelinger først.",
+		"backToAdmin": "Tilbake til oversikt"
 	},
 	"language": {
 		"en": "English",
