@@ -36,7 +36,7 @@
 	},
 	"existingEvent": {
 		"title": "Tilgang til eksisterande lek 🎄",
-		"subtitle": "Skriv inn arrangementsnamn og PIN for å få tilgang til oversikta",
+		"subtitle": "Skriv inn arrangementsnamn for å få tilgang til oversikta",
 		"eventNameLabel": "Arrangementsnamn",
 		"pinLabel": "Admin-PIN",
 		"submit": "Gå til oversikt",

@@ -36,7 +36,7 @@
 	},
 	"existingEvent": {
 		"title": "Access Existing Event 🎄",
-		"subtitle": "Enter your event name and PIN to access the admin dashboard",
+		"subtitle": "Enter your event name to access the admin dashboard",
 		"eventNameLabel": "Event Name",
 		"pinLabel": "Admin PIN",
 		"submit": "Access Dashboard",

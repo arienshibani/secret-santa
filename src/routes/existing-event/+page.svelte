@@ -3,13 +3,9 @@
 	import { t } from '$lib/i18n';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import SnowEffect from '$lib/components/SnowEffect.svelte';
-	import PinInput from '$lib/components/PinInput.svelte';
-	import { verifyAdminPin } from '$lib/supabase/db';
 
 	let eventName = '';
-	let pin = '';
 	let errors: Record<string, string> = {};
-	let loading = false;
 
 	const validate = (): boolean => {
 		errors = {};
@@ -19,32 +15,15 @@
 			return false;
 		}
 
-		if (!pin || pin.length !== 6) {
-			errors.pin = pin.length === 0 ? $t('existingEvent.validation.pinRequired') : $t('existingEvent.validation.pinLength');
-			return false;
-		}
-
 		return true;
 	};
 
-	const handleSubmit = async (e: Event) => {
+	const handleSubmit = (e: Event) => {
 		e.preventDefault();
 		if (!validate()) return;
 
-		loading = true;
-		try {
-			const valid = await verifyAdminPin(eventName.trim(), pin);
-			if (valid) {
-				goto(`/admin/${eventName.trim()}`);
-			} else {
-				errors.pin = $t('existingEvent.validation.invalidCredentials');
-			}
-		} catch (error) {
-			console.error('Error verifying PIN:', error);
-			errors.pin = $t('existingEvent.validation.invalidCredentials');
-		} finally {
-			loading = false;
-		}
+		// Navigate directly to admin page - PIN will be entered there
+		goto(`/admin/${eventName.trim()}`);
 	};
 </script>
 
@@ -83,16 +62,6 @@
 					{/if}
 				</div>
 
-				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-2">
-						{$t('existingEvent.pinLabel')}
-					</label>
-					<PinInput bind:value={pin} length={6} />
-					{#if errors.pin}
-						<p class="mt-1 text-sm text-red-600">{errors.pin}</p>
-					{/if}
-				</div>
-
 				<div class="flex gap-3">
 					<button
 						type="button"
@@ -103,10 +72,9 @@
 					</button>
 					<button
 						type="submit"
-						disabled={loading}
-						class="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-lg text-lg transition-colors shadow-lg"
+						class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg text-lg transition-colors shadow-lg"
 					>
-						{loading ? $t('common.loading') : $t('existingEvent.submit')}
+						{$t('existingEvent.submit')}
 					</button>
 				</div>
 			</form>
