@@ -7,6 +7,8 @@
 		"copy": "Kopier",
 		"copied": "Kopiert!",
 		"loading": "Laster...",
+		"saving": "Lagrer...",
+		"save": "Lagre",
 		"error": "Feil",
 		"success": "Suksess"
 	},
@@ -113,7 +115,13 @@
 		"save": "Lagre",
 		"cancel": "Avbryt",
 		"sendEmail": "Send E-post",
-		"sendSms": "Send SMS"
+		"sendSms": "Send SMS",
+		"messageTemplate": "Meldingsmal",
+		"emailSubject": "E-postemne",
+		"emailOnly": "Kun e-post",
+		"emailSubjectPlaceholder": "Din Secret Santa-tildeling for {{eventName}} 🎄",
+		"messageTemplatePlaceholder": "Hei {{participantsName}} 🎅✨\n\nDin tildelingslenke: {{url}}",
+		"templatePlaceholders": "Tilgjengelige plassholdere"
 	},
 	"language": {
 		"en": "English",

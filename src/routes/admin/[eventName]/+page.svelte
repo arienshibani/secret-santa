@@ -18,6 +18,9 @@
 	import { createSvelteTable, flexRender, getCoreRowModel, getFilteredRowModel } from '@tanstack/svelte-table';
 	import type { ColumnDef, ColumnFiltersState } from '@tanstack/table-core';
 	import { writable } from 'svelte/store';
+	import { currentLanguage } from '$lib/i18n';
+	import { getDefaultMessageTemplate, getDefaultEmailSubject, replaceTemplatePlaceholders } from '$lib/utils/message-template';
+	import { get } from 'svelte/store';
 
 	let eventName = '';
 	let authenticated = false;
@@ -33,6 +36,13 @@
 	let editEmail = '';
 	let editSms = '';
 	let savingId: string | null = null;
+	
+	// Message template state
+	let messageTemplate = '';
+	let emailSubject = '';
+	let templateCollapsed = true;
+	let savingTemplate = false;
+	let templateError = '';
 	
 	// Table filtering state
 	const columnFilters = writable<ColumnFiltersState>([]);
@@ -63,6 +73,71 @@
 		}
 	};
 
+	const loadMessageTemplate = async () => {
+		if (!eventName) return;
+		try {
+			const response = await fetch(`/api/admin/message-template?eventName=${encodeURIComponent(eventName)}`, {
+				credentials: 'include'
+			});
+			if (!response.ok) {
+				if (response.status === 401) {
+					authenticated = false;
+					pin = '';
+					return;
+				}
+				throw new Error('Failed to load template');
+			}
+			const data = await response.json();
+			const lang = get(currentLanguage);
+			
+			// If no template exists, use default based on current language
+			messageTemplate = data.messageTemplate || getDefaultMessageTemplate(lang);
+			emailSubject = data.emailSubject || getDefaultEmailSubject(lang);
+		} catch (error) {
+			console.error('Error loading message template:', error);
+			// Use defaults on error
+			const lang = get(currentLanguage);
+			messageTemplate = getDefaultMessageTemplate(lang);
+			emailSubject = getDefaultEmailSubject(lang);
+		}
+	};
+
+	const saveMessageTemplate = async () => {
+		if (!eventName) return;
+		savingTemplate = true;
+		templateError = '';
+		try {
+			const response = await fetch('/api/admin/message-template', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
+				body: JSON.stringify({
+					eventName,
+					messageTemplate: messageTemplate.trim() || null,
+					emailSubject: emailSubject.trim() || null
+				})
+			});
+			
+			if (!response.ok) {
+				if (response.status === 401) {
+					authenticated = false;
+					pin = '';
+					alert('Session expired. Please log in again.');
+					return;
+				}
+				throw new Error('Failed to save template');
+			}
+			
+			// Show success feedback
+			templateError = '';
+		} catch (error: any) {
+			console.error('Error saving message template:', error);
+			templateError = error.message || 'Failed to save template';
+		} finally {
+			savingTemplate = false;
+		}
+	};
+
 	const handleLogin = async () => {
 		pinError = false;
 		if (!pin || pin.length !== 6 || !eventName) return;
@@ -71,7 +146,7 @@
 			const valid = await verifyAdminPin(eventName, pin);
 			if (valid) {
 				authenticated = true;
-				await loadParticipants();
+				await Promise.all([loadParticipants(), loadMessageTemplate()]);
 			} else {
 				pinError = true;
 				pin = ''; // Clear PIN on error
@@ -141,7 +216,13 @@
 
 	const copyToClipboard = async (url: string, participantId: string) => {
 		try {
-			await navigator.clipboard.writeText(url);
+			const participant = participants.find(p => p.id === participantId);
+			if (participant) {
+				const message = getMessageForCopy(participant.name, url);
+				await navigator.clipboard.writeText(message);
+			} else {
+				await navigator.clipboard.writeText(url);
+			}
 			copiedIndex.set(participantId, true);
 			setTimeout(() => {
 				copiedIndex.delete(participantId);
@@ -189,15 +270,38 @@
 		}
 	};
 
-	const getSmsUrl = (phone: string, url: string): string => {
-		const message = $t('results.smsMessage', { url, eventName: eventName || 'Secret Santa' });
+	const getSmsUrl = (phone: string, url: string, participantName: string): string => {
+		const template = messageTemplate || getDefaultMessageTemplate(get(currentLanguage));
+		const message = replaceTemplatePlaceholders(template, {
+			participantsName: participantName,
+			url,
+			eventName: eventName || 'Secret Santa'
+		});
 		return `sms:${phone}?body=${encodeURIComponent(message)}`;
 	};
 
 	const getEmailUrl = (email: string, participantName: string, url: string): string => {
-		const subject = $t('results.emailSubject', { eventName: eventName || 'Secret Santa' });
-		const body = $t('results.emailBody', { name: participantName, url, eventName: eventName || 'Secret Santa' });
+		const template = messageTemplate || getDefaultMessageTemplate(get(currentLanguage));
+		const subjectTemplate = emailSubject || getDefaultEmailSubject(get(currentLanguage));
+		
+		const subject = replaceTemplatePlaceholders(subjectTemplate, {
+			eventName: eventName || 'Secret Santa'
+		});
+		const body = replaceTemplatePlaceholders(template, {
+			participantsName: participantName,
+			url,
+			eventName: eventName || 'Secret Santa'
+		});
 		return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+	};
+
+	const getMessageForCopy = (participantName: string, url: string): string => {
+		const template = messageTemplate || getDefaultMessageTemplate(get(currentLanguage));
+		return replaceTemplatePlaceholders(template, {
+			participantsName: participantName,
+			url,
+			eventName: eventName || 'Secret Santa'
+		});
 	};
 
 	// Column definitions for TanStack Table - reactive to showAssignees
@@ -324,6 +428,72 @@
 				</div>
 			{:else}
 				<div class="space-y-6">
+					<!-- Message Template Section (Collapsible) -->
+					<div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+						<button
+							type="button"
+							on:click={() => (templateCollapsed = !templateCollapsed)}
+							class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+						>
+							<h2 class="text-lg font-semibold text-gray-800">{$t('admin.messageTemplate')}</h2>
+							<svg
+								class="w-5 h-5 text-gray-600 transition-transform {templateCollapsed ? '' : 'rotate-180'}"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+						{#if !templateCollapsed}
+							<div class="p-6 space-y-4 border-t border-gray-200">
+								<div>
+									<label for="email-subject" class="block text-sm font-medium text-gray-700 mb-2">
+										{$t('admin.emailSubject')} ({$t('admin.emailOnly')})
+									</label>
+									<input
+										id="email-subject"
+										type="text"
+										bind:value={emailSubject}
+										placeholder={$t('admin.emailSubjectPlaceholder')}
+										class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+									/>
+									<p class="mt-1 text-xs text-gray-500">
+										{$t('admin.templatePlaceholders')}: {{eventName}}
+									</p>
+								</div>
+								<div>
+									<label for="message-template" class="block text-sm font-medium text-gray-700 mb-2">
+										{$t('admin.messageTemplate')}
+									</label>
+									<textarea
+										id="message-template"
+										bind:value={messageTemplate}
+										rows="8"
+										placeholder={$t('admin.messageTemplatePlaceholder')}
+										class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
+									></textarea>
+									<p class="mt-1 text-xs text-gray-500">
+										{$t('admin.templatePlaceholders')}: {{participantsName}}, {{url}}, {{eventName}}
+									</p>
+								</div>
+								{#if templateError}
+									<p class="text-sm text-red-600">{templateError}</p>
+								{/if}
+								<div class="flex justify-end">
+									<button
+										type="button"
+										on:click={saveMessageTemplate}
+										disabled={savingTemplate}
+										class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+									>
+										{savingTemplate ? $t('common.saving') : $t('common.save')}
+									</button>
+								</div>
+							</div>
+						{/if}
+					</div>
+
 					<div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
 						<p class="text-sm text-gray-800 leading-relaxed">
 							{$t('admin.assignmentUrlWarning')}
@@ -491,7 +661,7 @@
 													{/if}
 													{#if participant.sms}
 														<a
-															href={getSmsUrl(participant.sms, getAssignmentUrl(participant.token))}
+															href={getSmsUrl(participant.sms, getAssignmentUrl(participant.token), participant.name)}
 															class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors flex items-center justify-center gap-1"
 														>
 															<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

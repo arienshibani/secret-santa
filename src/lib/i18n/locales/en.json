@@ -7,6 +7,8 @@
 		"copy": "Copy",
 		"copied": "Copied!",
 		"loading": "Loading...",
+		"saving": "Saving...",
+		"save": "Save",
 		"error": "Error",
 		"success": "Success"
 	},
@@ -113,7 +115,13 @@
 		"save": "Save",
 		"cancel": "Cancel",
 		"sendEmail": "Send Email",
-		"sendSms": "Send SMS"
+		"sendSms": "Send SMS",
+		"messageTemplate": "Message Template",
+		"emailSubject": "Email Subject",
+		"emailOnly": "Email only",
+		"emailSubjectPlaceholder": "Your Secret Santa Assignment for {{eventName}} 🎄",
+		"messageTemplatePlaceholder": "Hello {{participantsName}} 🎅✨\n\nYour assignment link: {{url}}",
+		"templatePlaceholders": "Available placeholders"
 	},
 	"language": {
 		"en": "English",
