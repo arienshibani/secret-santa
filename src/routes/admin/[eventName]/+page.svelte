@@ -103,7 +103,9 @@
 	};
 
 	const toggleTemplateCollapse = () => {
+		console.log('Toggle clicked, current state:', templateCollapsed);
 		templateCollapsed = !templateCollapsed;
+		console.log('New state:', templateCollapsed);
 	};
 
 	const saveMessageTemplate = async () => {
