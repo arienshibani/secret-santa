@@ -121,14 +121,19 @@ export const updateParticipant = async (
 // Use /api/admin/config endpoint if you need to read admin config (requires authentication)
 
 export const createAdminConfig = async (eventName: string, pin: string): Promise<AdminConfig> => {
-	const { data, error } = await supabase
-		.from('admin_config')
-		.insert({ event_name: eventName, pin })
-		.select()
-		.single();
+	const response = await fetch('/api/admin/create-config', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ eventName, pin })
+	});
 
-	if (error) throw error;
-	return data as AdminConfig;
+	if (!response.ok) {
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to create admin config');
+	}
+
+	const data = await response.json();
+	return data.config as AdminConfig;
 };
 
 export const verifyAdminPin = async (eventName: string, pin: string): Promise<boolean> => {
