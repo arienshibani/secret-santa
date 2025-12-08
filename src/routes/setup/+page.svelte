@@ -66,7 +66,11 @@
 
 	const handleSubmit = async (e: Event) => {
 		e.preventDefault();
-		if (!validate() || !participantData) return;
+		console.log('Submit: pin value =', pin, 'length =', pin?.length);
+		if (!validate() || !participantData) {
+			console.log('Validation failed: pin =', pin, 'errors =', errors);
+			return;
+		}
 
 		loading = true;
 		try {
@@ -173,6 +177,8 @@
 							{#if errors.pin}
 								<p class="mt-1 text-sm text-red-600">{errors.pin}</p>
 							{/if}
+							<!-- Debug: Show PIN length -->
+							<p class="mt-1 text-xs text-gray-400">PIN length: {pin.length}, PIN value: {pin || '(empty)'}</p>
 						</div>
 
 						<div class="flex gap-3">
