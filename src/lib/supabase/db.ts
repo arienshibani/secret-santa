@@ -67,10 +67,16 @@ export const getAssignedParticipant = async (
 
 export const getAllParticipants = async (eventName: string): Promise<Participant[]> => {
 	try {
-		const response = await fetch(`/api/admin/participants?eventName=${encodeURIComponent(eventName)}`);
+		const response = await fetch(`/api/admin/participants?eventName=${encodeURIComponent(eventName)}`, {
+			credentials: 'include' // Important: include cookies for session
+		});
 		if (!response.ok) {
 			if (response.status === 401) {
 				throw new Error('Unauthorized - please log in again');
+			}
+			if (response.status === 403) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.error || 'Invalid event or session mismatch');
 			}
 			throw new Error('Failed to fetch participants');
 		}
