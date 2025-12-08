@@ -22,7 +22,6 @@
 			lastSyncedValue = newValue;
 			value = newValue;
 			dispatch('input', { value: newValue });
-			console.log('PinInput: Updated value to', newValue, 'length:', newValue.length);
 			// Use a longer timeout to ensure reactive statements don't interfere
 			// This gives time for the parent component to process the update
 			setTimeout(() => {

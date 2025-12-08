@@ -66,11 +66,7 @@
 
 	const handleSubmit = async (e: Event) => {
 		e.preventDefault();
-		console.log('Submit: pin value =', pin, 'length =', pin?.length);
-		if (!validate() || !participantData) {
-			console.log('Validation failed: pin =', pin, 'errors =', errors);
-			return;
-		}
+		if (!validate() || !participantData) return;
 
 		loading = true;
 		try {
