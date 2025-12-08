@@ -4,11 +4,13 @@
 	import { t } from '$lib/i18n';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import SnowEffect from '$lib/components/SnowEffect.svelte';
+	import EventCountdown from '$lib/components/EventCountdown.svelte';
 	import { getParticipantByToken, getAssignedParticipant } from '$lib/supabase/db';
 	import type { Participant } from '$lib/utils/types';
 
 	let participant: Participant | null = null;
 	let assignedTo: Participant | null = null;
+	let eventDate: string | null = null;
 	let loading = true;
 	let error: string | null = null;
 
@@ -33,6 +35,17 @@
 			if (p.assigned_to_id) {
 				const assigned = await getAssignedParticipant(p.assigned_to_id);
 				assignedTo = assigned;
+			}
+
+			// Load event date for countdown (backwards compatible - only if event_date exists)
+			try {
+				const eventDateResponse = await fetch(`/api/event-date?eventName=${encodeURIComponent(p.event_name)}`);
+				if (eventDateResponse.ok) {
+					const eventDateData = await eventDateResponse.json();
+					eventDate = eventDateData.eventDate || null;
+				}
+			} catch (err) {
+				// Silently fail - countdown is optional
 			}
 		} catch (err) {
 			console.error('Error loading assignment:', err);
@@ -69,6 +82,12 @@
 					<h1 class="text-5xl md:text-6xl font-bold text-red-600 mb-4">
 						{$t('assignment.title')}
 					</h1>
+
+					{#if eventDate}
+						<div class="flex justify-center">
+							<EventCountdown eventDate={eventDate} />
+						</div>
+					{/if}
 
 					<div class="bg-red-50 rounded-lg p-6 mb-6">
 						<p class="text-lg text-gray-700 mb-2">

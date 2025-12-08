@@ -5,7 +5,7 @@
 	import { t } from '$lib/i18n';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import SnowEffect from '$lib/components/SnowEffect.svelte';
-	import { getAllParticipants, getAdminConfig } from '$lib/supabase/db';
+	import { getAllParticipants } from '$lib/supabase/db';
 	import { getAssignmentUrl } from '$lib/utils/token';
 	import type { Participant, AssignmentResult } from '$lib/utils/types';
 
@@ -44,14 +44,57 @@
 			}
 			assignments = results;
 
-			// Get admin PIN
-			const config = await getAdminConfig(eventName);
-			if (config) {
-				adminPin = config.pin;
+			// Get admin PIN from sessionStorage (stored during setup)
+			if (typeof window !== 'undefined') {
+				const storedPin = sessionStorage.getItem(`adminPin_${eventName}`);
+				if (storedPin) {
+					adminPin = storedPin;
+				}
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error loading participants:', error);
-			alert('Error loading results. Please try again.');
+			if (error.message?.includes('Unauthorized')) {
+				// Session expired or not logged in - try to auto-login if we have PIN
+				if (typeof window !== 'undefined') {
+					const storedPin = sessionStorage.getItem(`adminPin_${eventName}`);
+					if (storedPin) {
+						try {
+							const loginResponse = await fetch('/api/admin/verify-pin', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({ eventName, pin: storedPin })
+							});
+							const loginData = await loginResponse.json();
+							if (loginData.valid) {
+								// Retry loading participants
+								const all = await getAllParticipants(eventName);
+								participants = all;
+								// Build assignment results
+								const results: AssignmentResult[] = [];
+								for (const participant of all) {
+									if (participant.assigned_to_id) {
+										const assignedTo = all.find((p) => p.id === participant.assigned_to_id);
+										if (assignedTo) {
+											results.push({
+												participant,
+												assignedTo,
+												url: getAssignmentUrl(participant.token)
+											});
+										}
+									}
+								}
+								assignments = results;
+								return; // Success, exit early
+							}
+						} catch (loginError) {
+							console.error('Error auto-logging in:', loginError);
+						}
+					}
+				}
+				alert('Session expired. Please log in via the admin page.');
+			} else {
+				alert('Error loading results. Please try again.');
+			}
 		}
 	});
 

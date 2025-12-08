@@ -12,18 +12,21 @@
 	let focusedIndex: number | null = null;
 	let showPin = false; // Toggle for showing/hiding PIN
 	let isInternalUpdate = false; // Flag to prevent reactive loop
+	let lastSyncedValue = ''; // Track last synced value to prevent loops
 
 	const updateValue = () => {
 		const newValue = pinArray.join('');
 		// Always update the value synchronously to ensure parent component sees it immediately
-		if (newValue !== value) {
+		if (newValue !== lastSyncedValue) {
 			isInternalUpdate = true;
+			lastSyncedValue = newValue;
 			value = newValue;
 			dispatch('input', { value: newValue });
-			// Reset flag asynchronously to allow external updates
+			// Use a longer timeout to ensure reactive statements don't interfere
+			// This gives time for the parent component to process the update
 			setTimeout(() => {
 				isInternalUpdate = false;
-			}, 0);
+			}, 100);
 		}
 	};
 
@@ -39,9 +42,13 @@
 		const input = inputs[index];
 		if (!input) return;
 
+		// Always store the actual digit value in input.value for HTML5 validation
+		// Use CSS to mask the display visually
+		const actualValue = pinArray[index] || '';
+		input.value = actualValue;
+
 		if (showPin) {
 			// Show actual value when reveal is active
-			input.value = pinArray[index] || '';
 			input.classList.remove('pin-masked');
 		} else {
 			const lastFilledIndex = getLastFilledIndex();
@@ -50,15 +57,12 @@
 			const hasValue = !!pinArray[index];
 
 			if (!hasValue) {
-				input.value = '';
 				input.classList.remove('pin-masked');
 			} else if (isFocused || isLastFilled) {
 				// Show actual digit if focused or it's the last filled one
-				input.value = pinArray[index];
 				input.classList.remove('pin-masked');
 			} else {
-				// Mask all other filled digits
-				input.value = '●';
+				// Mask all other filled digits using CSS
 				input.classList.add('pin-masked');
 			}
 		}
@@ -72,13 +76,20 @@
 
 	const handleInput = (index: number, event: Event) => {
 		const target = event.target as HTMLInputElement;
-		const inputValue = target.value.replace(/\D/g, ''); // Only numbers
+		// Get the raw input value and extract only digits
+		// This handles cases where the display shows ● but user types a digit
+		const rawValue = target.value;
+		const inputValue = rawValue.replace(/[^0-9]/g, ''); // Extract only digits
+		
+		// If inputValue is empty but we had a value, user might be clearing
+		// If inputValue has content, use the last character (handles pasting)
+		const digitToStore = inputValue.length > 0 ? inputValue.slice(-1) : '';
 
 		if (inputValue.length > 1) {
 			// If pasting multiple digits
 			const digits = inputValue.slice(0, length - index).split('');
 			digits.forEach((digit, i) => {
-				if (index + i < length) {
+				if (index + i < length && /^\d$/.test(digit)) {
 					pinArray[index + i] = digit;
 				}
 			});
@@ -89,10 +100,11 @@
 				inputs[nextIndex].focus();
 			}
 		} else {
-			pinArray[index] = inputValue;
+			// Store the actual digit value (single character)
+			pinArray[index] = digitToStore;
 			
 			// Move to next input if value entered
-			if (inputValue && index < length - 1) {
+			if (digitToStore && index < length - 1) {
 				// Update displays before moving focus
 				updateAllDisplays();
 				setTimeout(() => {
@@ -134,7 +146,7 @@
 			updateAllDisplays();
 			// Ensure value is synced when losing focus
 			updateValue();
-		}, 10);
+		}, 50);
 	};
 
 	const handlePaste = (event: ClipboardEvent) => {
@@ -161,15 +173,17 @@
 
 	$: {
 		// Only sync external changes, not internal updates
-		if (!isInternalUpdate) {
+		// This reactive statement handles external value changes (e.g., from parent clearing the value)
+		if (!isInternalUpdate && value !== lastSyncedValue) {
 			const currentPinValue = pinArray.join('');
-			// Only sync if external value is different from internal state
+			// Only sync if external value is different AND we're not in the middle of an update
 			if (value !== currentPinValue) {
-				if (value && value.length <= length) {
-					// Sync external value changes to internal array
+				// If external value is being set and is different, sync it to internal array
+				if (value && value.length <= length && /^\d+$/.test(value)) {
+					// Sync external value changes to internal array (only if it's a valid number string)
 					const digits = value.split('');
 					digits.forEach((digit, i) => {
-						if (i < length) {
+						if (i < length && /^\d$/.test(digit)) {
 							pinArray[i] = digit;
 						}
 					});
@@ -177,10 +191,13 @@
 					for (let i = digits.length; i < length; i++) {
 						pinArray[i] = '';
 					}
+					lastSyncedValue = value;
 					updateAllDisplays();
-				} else if (!value) {
-					// Clear all if value is empty
+				} else if (!value && currentPinValue.length === 0) {
+					// Only clear if both external and internal are empty
+					// Don't clear if user has typed something but value prop hasn't synced yet
 					pinArray = Array(length).fill('');
+					lastSyncedValue = '';
 					inputs.forEach((input) => {
 						if (input) {
 							input.value = '';
@@ -188,6 +205,7 @@
 						}
 					});
 				}
+				// If value is empty but we have internal values, don't clear - user is typing
 			}
 		}
 	}
@@ -256,5 +274,11 @@
 	:global(.pin-input.pin-masked) {
 		-webkit-text-security: disc;
 		text-security: disc;
+		/* Ensure the actual value is still there for validation */
+		color: transparent;
+		text-shadow: 0 0 0 currentColor;
+	}
+	:global(.pin-input.pin-masked::placeholder) {
+		color: transparent;
 	}
 </style>

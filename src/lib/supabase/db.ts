@@ -66,76 +66,108 @@ export const getAssignedParticipant = async (
 };
 
 export const getAllParticipants = async (eventName: string): Promise<Participant[]> => {
-	const { data, error } = await supabase
-		.from('participants')
-		.select('*')
-		.eq('event_name', eventName)
-		.order('created_at');
-
-	if (error) throw error;
-	return (data || []) as Participant[];
+	try {
+		const response = await fetch(`/api/admin/participants?eventName=${encodeURIComponent(eventName)}`, {
+			credentials: 'include' // Important: include cookies for session
+		});
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error('Unauthorized - please log in again');
+			}
+			if (response.status === 403) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.error || 'Invalid event or session mismatch');
+			}
+			throw new Error('Failed to fetch participants');
+		}
+		const data = await response.json();
+		return data.participants || [];
+	} catch (error) {
+		console.error('Error fetching participants:', error);
+		throw error;
+	}
 };
 
 export const updateGiftStatus = async (participantId: string, giftReady: boolean): Promise<void> => {
-	const { error } = await supabase
-		.from('participants')
-		.update({ gift_ready: giftReady })
-		.eq('id', participantId);
+	const response = await fetch('/api/admin/gift-status', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ participantId, giftReady })
+	});
 
-	if (error) throw error;
+	if (!response.ok) {
+		if (response.status === 401) {
+			throw new Error('Unauthorized - please log in again');
+		}
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to update gift status');
+	}
 };
 
 export const updateParticipant = async (
 	participantId: string,
 	updates: { name?: string; email?: string | null; sms?: string | null }
 ): Promise<void> => {
-	const { error } = await supabase
-		.from('participants')
-		.update(updates)
-		.eq('id', participantId);
+	const response = await fetch('/api/admin/participant', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ participantId, updates })
+	});
 
-	if (error) throw error;
+	if (!response.ok) {
+		if (response.status === 401) {
+			throw new Error('Unauthorized - please log in again');
+		}
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to update participant');
+	}
 };
 
-export const getAdminConfig = async (eventName: string): Promise<AdminConfig | null> => {
-	const { data, error } = await supabase
-		.from('admin_config')
-		.select('*')
-		.eq('event_name', eventName)
-		.single();
+// getAdminConfig removed - admin config should only be accessed via server-side API
+// Use /api/admin/config endpoint if you need to read admin config (requires authentication)
 
-	if (error || !data) return null;
-	return data as AdminConfig;
-};
+export const createAdminConfig = async (eventName: string, pin: string, eventDate?: string | null): Promise<AdminConfig> => {
+	const response = await fetch('/api/admin/create-config', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ eventName, pin, eventDate: eventDate || null })
+	});
 
-export const createAdminConfig = async (eventName: string, pin: string): Promise<AdminConfig> => {
-	const { data, error } = await supabase
-		.from('admin_config')
-		.insert({ event_name: eventName, pin })
-		.select()
-		.single();
+	if (!response.ok) {
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to create admin config');
+	}
 
-	if (error) throw error;
-	return data as AdminConfig;
+	const data = await response.json();
+	return data.config as AdminConfig;
 };
 
 export const verifyAdminPin = async (eventName: string, pin: string): Promise<boolean> => {
-	const config = await getAdminConfig(eventName);
-	if (!config) return false;
-	return config.pin === pin;
+	try {
+		const response = await fetch('/api/admin/verify-pin', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ eventName, pin })
+		});
+		const data = await response.json();
+		return data.valid === true;
+	} catch (error) {
+		console.error('Error verifying PIN:', error);
+		return false;
+	}
 };
 
 export const clearAllData = async (eventName: string): Promise<void> => {
-	const { error: participantsError } = await supabase
-		.from('participants')
-		.delete()
-		.eq('event_name', eventName);
-	const { error: adminError } = await supabase
-		.from('admin_config')
-		.delete()
-		.eq('event_name', eventName);
+	const response = await fetch(`/api/admin/clear-data?eventName=${encodeURIComponent(eventName)}`, {
+		method: 'DELETE'
+	});
 
-	if (participantsError) throw participantsError;
-	if (adminError) throw adminError;
+	if (!response.ok) {
+		if (response.status === 401) {
+			throw new Error('Unauthorized - please log in again');
+		}
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to clear data');
+	}
 };
 
