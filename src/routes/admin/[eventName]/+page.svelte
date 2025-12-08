@@ -871,6 +871,17 @@
 								{$t('admin.hideAssignees')}
 							</button>
 						{/if}
+						{#if participants.some(p => p.assigned_to_id)}
+							<button
+								type="button"
+								on:click={() => goto(`/reveal/${encodeURIComponent(eventName)}`)}
+								class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+								title="Reveal assignments dramatically"
+							>
+								<span>🎭</span>
+								{$t('admin.revealAssignments')}
+							</button>
+						{/if}
 						<button
 							type="button"
 							on:click={openEventDateDialog}
@@ -906,9 +917,9 @@
 						/>
 					</div>
 
-					<div class="overflow-x-auto">
+					<div class="overflow-x-auto overflow-y-auto max-h-[600px] border border-gray-200 rounded-lg">
 						<table class="w-full border-collapse">
-							<thead>
+							<thead class="sticky top-0 bg-gray-100 z-10">
 								<tr class="bg-gray-100">
 									<th class="border border-gray-300 px-4 py-2 text-left">{$t('admin.name')}</th>
 									<th class="border border-gray-300 px-4 py-2 text-left">{$t('admin.contact')}</th>
