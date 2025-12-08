@@ -3,9 +3,9 @@ import type { RequestHandler } from './$types';
 import { supabaseAdmin } from '$lib/supabase/server';
 import { createAdminSession, setAdminSessionCookie } from '$lib/auth/session';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
-		const { eventName, pin } = await request.json();
+		const { eventName, pin } = await event.request.json();
 
 		if (!eventName || !pin || typeof pin !== 'string' || pin.length !== 6) {
 			return json({ error: 'Invalid request' }, { status: 400 });
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		if (isValid) {
 			const sessionToken = createAdminSession(eventName);
-			setAdminSessionCookie({ cookies } as any, sessionToken);
+			setAdminSessionCookie(event, sessionToken);
 			return json({ valid: true });
 		} else {
 			return json({ valid: false }, { status: 200 });

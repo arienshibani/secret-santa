@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
 import type { RequestEvent } from '@sveltejs/kit';
+import { JWT_SECRET } from '$env/static/private';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+if (!JWT_SECRET) {
+	throw new Error('Missing JWT_SECRET environment variable - required for admin session management');
+}
+
 const SESSION_COOKIE_NAME = 'admin_session';
 const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours
 
@@ -34,10 +38,11 @@ export const getAdminSession = (event: RequestEvent): AdminSession | null => {
 };
 
 export const setAdminSessionCookie = (event: RequestEvent, token: string) => {
+	const isProduction = import.meta.env.PROD;
 	event.cookies.set(SESSION_COOKIE_NAME, token, {
 		path: '/',
 		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
+		secure: isProduction,
 		sameSite: 'strict',
 		maxAge: SESSION_MAX_AGE
 	});
