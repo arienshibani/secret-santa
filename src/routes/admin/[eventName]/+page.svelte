@@ -54,8 +54,13 @@
 		try {
 			const all = await getAllParticipants(eventName);
 			participants = all;
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error loading participants:', error);
+			if (error.message?.includes('Unauthorized')) {
+				authenticated = false;
+				pin = '';
+				alert('Session expired. Please log in again.');
+			}
 		}
 	};
 
@@ -90,11 +95,17 @@
 			participants = participants.map(p => 
 				p.id === participantId ? { ...p, gift_ready: checked } : p
 			);
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error updating gift status:', error);
-			alert('Error updating gift status');
-			// Reload on error to sync state
-			await loadParticipants();
+			if (error.message?.includes('Unauthorized')) {
+				authenticated = false;
+				pin = '';
+				alert('Session expired. Please log in again.');
+			} else {
+				alert('Error updating gift status');
+				// Reload on error to sync state
+				await loadParticipants();
+			}
 		}
 	};
 
@@ -109,9 +120,15 @@
 			showClearDialog = false;
 			alert('All data cleared successfully');
 			goto('/');
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error clearing data:', error);
-			alert('Error clearing data');
+			if (error.message?.includes('Unauthorized')) {
+				authenticated = false;
+				pin = '';
+				alert('Session expired. Please log in again.');
+			} else {
+				alert('Error clearing data');
+			}
 		} finally {
 			loading = false;
 		}
@@ -159,9 +176,15 @@
 			});
 			await loadParticipants();
 			cancelEdit();
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error updating participant:', error);
-			alert('Error updating participant');
+			if (error.message?.includes('Unauthorized')) {
+				authenticated = false;
+				pin = '';
+				alert('Session expired. Please log in again.');
+			} else {
+				alert('Error updating participant');
+			}
 		} finally {
 			savingId = null;
 		}
